@@ -1,0 +1,175 @@
+volumes:
+  postgres_storage:
+  open-webui_storage:
+
+networks:
+  main:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.254.0.0/24
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-security-baseline: &security-baseline
+  security_opt:
+    - no-new-privileges:true
+    - apparmor=docker-default
+  cap_drop:
+    - ALL
+
+services:
+  # ---- postgres database with pgvector support ----
+  postgres:
+    <<: *security-baseline
+    image: pgvector/pgvector:pg16
+    hostname: postgres
+    container_name: postgres
+    networks: ['main']
+    restart: unless-stopped
+    user: "postgres"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - TZ=${TZ}
+      - PGTZ=${TZ}
+      - POSTGRES_INITDB_ARGS=--data-checksums
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - SETGID
+      - SETUID
+    volumes:
+      - postgres_storage:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -t 1 -q']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    shm_size: '256mb'
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging: *default-logging
+
+  # ---- open-webui main ----
+  open-webui:
+    <<: *security-baseline
+    image: ghcr.io/open-webui/open-webui:main
+    networks: ['main']
+    restart: unless-stopped
+    container_name: open-webui
+    hostname: open-webui
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - open-webui_storage:/app/backend/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - WEBUI_URL=https://${HOST}
+      - CORS_ALLOW_ORIGIN=https://${HOST}
+      - WEBHOOK_URL=https://${HOST}/webhook
+      - TZ=${TZ}
+      - ENV=${ENV}
+      - ENABLE_WEB_SEARCH=${ENABLE_WEB_SEARCH}
+      - ENABLE_ADMIN_EXPORT=${ENABLE_ADMIN_EXPORT}
+      - ENABLE_ADMIN_CHAT_ACCESS=${ENABLE_ADMIN_CHAT_ACCESS}
+      - USE_CUDA_DOCKER=${USE_CUDA_DOCKER}
+      - ENABLE_OLLAMA_API=${ENABLE_OLLAMA_API}
+      - USE_OLLAMA_DOCKER=${USE_OLLAMA_DOCKER}
+      - ENABLE_EVALUATION_ARENA_MODELS=${ENABLE_EVALUATION_ARENA_MODELS}
+      - ENABLE_PERSISTENT_CONFIG=${ENABLE_PERSISTENT_CONFIG}
+      - ENABLE_SIGNUP_PASSWORD_CONFIRMATION=${ENABLE_SIGNUP_PASSWORD_CONFIRMATION}
+      - WEBUI_SESSION_COOKIE_SAME_SITE=${WEBUI_SESSION_COOKIE_SAME_SITE}
+      - WEBUI_AUTH_COOKIE_SAME_SITE=${WEBUI_AUTH_COOKIE_SAME_SITE}
+      - WEBUI_SESSION_COOKIE_SECURE=${WEBUI_SESSION_COOKIE_SECURE}
+      - WEBUI_AUTH_COOKIE_SECURE=${WEBUI_AUTH_COOKIE_SECURE}
+      - ENABLE_VERSION_UPDATE_CHECK=${ENABLE_VERSION_UPDATE_CHECK}
+      - DATABASE_URL=${DATABASE_TYPE}://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - VECTOR_DB=${VECTOR_DB}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - WEB_SEARCH_ENGINE=${WEB_SEARCH_ENGINE}
+      - WEB_LOADER_ENGINE=${WEB_LOADER_ENGINE}
+      - AUDIO_STT_ENGINE=${AUDIO_STT_ENGINE}
+      - AUDIO_STT_MODEL=${AUDIO_STT_MODEL}
+      - AUDIO_TTS_ENGINE=${AUDIO_TTS_ENGINE}
+      - AUDIO_TTS_MODEL=${AUDIO_TTS_MODEL}
+      - ENABLE_IMAGE_GENERATION=${ENABLE_IMAGE_GENERATION}
+      - IMAGE_GENERATION_ENGINE=${IMAGE_GENERATION_ENGINE}
+      - IMAGE_GENERATION_MODEL=${IMAGE_GENERATION_MODEL}
+      - IMAGE_EDIT_ENGINE=${IMAGE_EDIT_ENGINE}
+      - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL}
+      - RAG_EMBEDDING_ENGINE=${RAG_EMBEDDING_ENGINE}
+      - RAG_EMBEDDING_MODEL=${RAG_EMBEDDING_MODEL}
+      - ENABLE_MESSAGE_RATING=${ENABLE_MESSAGE_RATING}
+      - ENABLE_COMMUNITY_SHARING=${ENABLE_COMMUNITY_SHARING}
+      - ENABLE_API_KEY=${ENABLE_API_KEY}
+      - HOST=0.0.0.0
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    env_file:
+      - path: .env
+        required: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging: *default-logging
+
+  # ---- Cloudflare reverse proxy ----
+  cloudflared:
+    <<: *security-baseline
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    networks: ['main']
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARED_TUNNEL_TOKEN}
+    read_only: true
+    tmpfs:
+      - /tmp
+    command: tunnel --metrics 127.0.0.1:60123 --no-autoupdate run
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:60123", "ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging: *default-logging
