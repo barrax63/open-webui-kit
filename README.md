@@ -73,7 +73,7 @@ For more information on how to access the services, please refer to the table be
 | Container      | Version     | Hostname    | Port | Network accessible?      |
 |----------------|-------------|-------------|------|--------------------------|
 | `open-webui`   | `main`      | open-webui  | 8080 | From host (127.0.0.1)    |
-| `postgres`     | `pg16`      | postgres    | 5432 | From Docker network only |
+| `pgvector`     | `pg16`      | pgvector    | 5432 | From Docker network only |
 | `cloudflared`  | `latest`    | cloudflared | -/-  | -/-                      |
 
 ### Expose Open WebUI through Cloudflare Tunnel (optional)
