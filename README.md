@@ -83,7 +83,7 @@ For more information on how to access the services, please refer to the table be
 3. Start Cloudflared alongside Open WebUI:
 
    ```bash
-   docker compose up -d
+   docker compose --profile cloudflared up -d
    ```
 
 Cloudflared connects directly to Cloudflare's edge using the `token`, so no additional configuration files are required. Your Open WebUI instance will be accessible via your custom domain without exposing any ports.

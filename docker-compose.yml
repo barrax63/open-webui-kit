@@ -71,8 +71,9 @@ services:
     networks: ['main']
     restart: unless-stopped
     hostname: open-webui
-    ports:
-      - "127.0.0.1:8080:8080"
+# uncomment if you don't use cloudflared.
+#    ports:
+#      - "127.0.0.1:8080:8080"
     volumes:
       - open-webui_storage:/app/backend/data
     depends_on:
@@ -146,6 +147,7 @@ services:
   cloudflared:
     <<: *security-baseline
     image: cloudflare/cloudflared:latest
+    profiles: ["cloudflared"]
     networks: ['main']
     restart: unless-stopped
     env_file:
