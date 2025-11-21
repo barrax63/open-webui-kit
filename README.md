@@ -38,8 +38,8 @@
 #### Standard Setup
 
 ```bash
-git clone <your-repository-url>
-cd <repository-name>
+git clone https://github.com/barrax63/open-webui-kit.git
+cd open-webui-kit
 cp .env.example .env # Update the STANDARD CONFIGURATION section inside
 docker compose up -d
 ```
