@@ -60,8 +60,8 @@ services:
           cpus: '2.0'
           memory: 4G
         reservations:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '1.0'
+          memory: 2G
     logging: *default-logging
 
   # ---- open-webui main ----
@@ -136,11 +136,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
+          cpus: '1.0'
           memory: 2G
         reservations:
           cpus: '0.5'
-          memory: 512M
+          memory: 1G
     logging: *default-logging
 
   # ---- Cloudflare reverse proxy ----
@@ -168,9 +168,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
           cpus: '0.5'
           memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     logging: *default-logging
