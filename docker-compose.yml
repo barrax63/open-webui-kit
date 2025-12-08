@@ -33,11 +33,10 @@ services:
     networks: ['main']
     restart: unless-stopped
     user: "postgres"
+    env_file:
+      - path: .env
+        required: true
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - TZ=${TZ}
       - PGTZ=${TZ}
       - POSTGRES_INITDB_ARGS=--data-checksums
     cap_add:
@@ -79,54 +78,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    env_file:
+      - path: .env
+        required: true
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - WEBUI_URL=https://${HOST}
       - CORS_ALLOW_ORIGIN=https://${HOST}
       - WEBHOOK_URL=https://${HOST}/webhook
-      - TZ=${TZ}
-      - ENV=${ENV}
-      - ENABLE_WEB_SEARCH=${ENABLE_WEB_SEARCH}
-      - ENABLE_ADMIN_EXPORT=${ENABLE_ADMIN_EXPORT}
-      - ENABLE_ADMIN_CHAT_ACCESS=${ENABLE_ADMIN_CHAT_ACCESS}
-      - USE_CUDA_DOCKER=${USE_CUDA_DOCKER}
-      - ENABLE_OLLAMA_API=${ENABLE_OLLAMA_API}
-      - USE_OLLAMA_DOCKER=${USE_OLLAMA_DOCKER}
-      - ENABLE_EVALUATION_ARENA_MODELS=${ENABLE_EVALUATION_ARENA_MODELS}
-      - ENABLE_PERSISTENT_CONFIG=${ENABLE_PERSISTENT_CONFIG}
-      - ENABLE_SIGNUP_PASSWORD_CONFIRMATION=${ENABLE_SIGNUP_PASSWORD_CONFIRMATION}
-      - WEBUI_SESSION_COOKIE_SAME_SITE=${WEBUI_SESSION_COOKIE_SAME_SITE}
-      - WEBUI_AUTH_COOKIE_SAME_SITE=${WEBUI_AUTH_COOKIE_SAME_SITE}
-      - WEBUI_SESSION_COOKIE_SECURE=${WEBUI_SESSION_COOKIE_SECURE}
-      - WEBUI_AUTH_COOKIE_SECURE=${WEBUI_AUTH_COOKIE_SECURE}
-      - ENABLE_VERSION_UPDATE_CHECK=${ENABLE_VERSION_UPDATE_CHECK}
       - DATABASE_URL=${DATABASE_TYPE}://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      - VECTOR_DB=${VECTOR_DB}
-      - TAVILY_API_KEY=${TAVILY_API_KEY}
-      - WEB_SEARCH_ENGINE=${WEB_SEARCH_ENGINE}
-      - WEB_LOADER_ENGINE=${WEB_LOADER_ENGINE}
-      - AUDIO_STT_ENGINE=${AUDIO_STT_ENGINE}
-      - AUDIO_STT_MODEL=${AUDIO_STT_MODEL}
-      - AUDIO_TTS_ENGINE=${AUDIO_TTS_ENGINE}
-      - AUDIO_TTS_MODEL=${AUDIO_TTS_MODEL}
-      - ENABLE_IMAGE_GENERATION=${ENABLE_IMAGE_GENERATION}
-      - IMAGE_GENERATION_ENGINE=${IMAGE_GENERATION_ENGINE}
-      - IMAGE_GENERATION_MODEL=${IMAGE_GENERATION_MODEL}
-      - IMAGE_EDIT_ENGINE=${IMAGE_EDIT_ENGINE}
-      - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL}
-      - RAG_EMBEDDING_ENGINE=${RAG_EMBEDDING_ENGINE}
-      - RAG_EMBEDDING_MODEL=${RAG_EMBEDDING_MODEL}
-      - ENABLE_MESSAGE_RATING=${ENABLE_MESSAGE_RATING}
-      - ENABLE_COMMUNITY_SHARING=${ENABLE_COMMUNITY_SHARING}
-      - ENABLE_API_KEY=${ENABLE_API_KEY}
       - HOST=0.0.0.0
     cap_add:
       - CHOWN
       - SETGID
       - SETUID
-    env_file:
-      - path: .env
-        required: true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
       interval: 10s
@@ -150,9 +114,6 @@ services:
     profiles: ["cloudflared"]
     networks: ['main']
     restart: unless-stopped
-    env_file:
-      - path: .env
-        required: true
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARED_TUNNEL_TOKEN}
     read_only: true
