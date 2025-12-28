@@ -7,9 +7,6 @@ volumes:
 networks:
   main:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 10.254.1.0/24
 
 x-logging: &default-logging
   driver: "json-file"
