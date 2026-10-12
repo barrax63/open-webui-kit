@@ -156,7 +156,7 @@ The `.env.example` file contains all configurable options divided into two secti
 - **POSTGRES_PASSWORD**: Database password for PostgreSQL
 - **OPENAI_API_KEY**: Your OpenAI API key for GPT models
 - **TAVILY_API_KEY**: API key for Tavily web search
-- **HOST**: Your domain name or IP address (important for webhooks and OAuth)
+- **HOST**: Your domain name or IP address
 - **CLOUDFLARED_TUNNEL_TOKEN**: Cloudflare tunnel token for remote access
 - **TZ**: Your timezone (e.g., `Europe/Berlin`)
 

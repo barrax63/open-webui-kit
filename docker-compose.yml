@@ -82,7 +82,6 @@ services:
     environment:
       - WEBUI_URL=https://${HOST}
       - CORS_ALLOW_ORIGIN=https://${HOST}
-      - WEBHOOK_URL=https://${HOST}/webhook
       - DATABASE_URL=${DATABASE_TYPE}://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - AUDIO_REALTIME_OPENAI_API_KEY=${OPENAI_API_KEY}
       - HOST=0.0.0.0
